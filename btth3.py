@@ -1,108 +1,202 @@
-cart_items = [
-    ["P001", "Dien thoai iPhone 15", 1, 25000000],
-    ["P002", "Op lung Silicon", 2, 150000]
-]
+available_seats = 50
+flight_revenue = 0.0
 
-while True:
-    print("\n" + "="*50)
-    print("          SHOPEE CART MANAGEMENT SYSTEM          ")
-    print("="*50)
-    print("[1] Xem chi tiết giỏ hàng & Tính tổng tiền")
-    print("[2] Thêm sản phẩm mới / Cộng dồn số lượng")
-    print("[3] Cập nhật số lượng của một sản phẩm")
-    print("[4] Xóa sản phẩm khỏi giỏ hàng")
-    print("[5] Thoát chương trình")
-    print("="*50)
-    choice = int(input("Mời bạn chọn chức năng (1-5): "))
-        
-    if choice == 1:
-        print("\n" + "-"*30 + " CHI TIẾT GIỎ HÀNG " + "-"*30)
-        print(f"{'STT':<5} | {'Mã SP':<7} | {'Tên Sản Phẩm':<25} | {'SL':<5} | {'Đơn Giá':<12} | {'Thành Tiền'}")
-        print("-"*85)
-        
-        total_quantity = 0
-        total_amount = 0
-        
-        for index, item in enumerate(cart_items, start=1):
-            product_id = item[0]
-            product_name = item[1]
-            quantity = item[2]
-            price = item[3]
-            
-            subtotal = quantity * price
-            total_quantity += quantity
-            total_amount += subtotal
-            
-            print(f"{index:<5} | {product_id:<7} | {product_name:<25} | {quantity:<5} | {price:,.0f}đ{'' :<4} | {subtotal:,.0f}đ")
-            
-        print("-"*85)
-        print(f"⇒ Tổng số lượng sản phẩm trong giỏ: {total_quantity}")
-        print(f"⇒ TỔNG TIỀN THANH TOÁN: {total_amount:,.0f}đ")
-        print("-" * 85)
+BASE_PRICE = 2000.0
+MAX_CAPACITY = 50
 
-    elif choice == 2:
-        product_id = input("Nhập mã sản phẩm: ")
-        product_name = input("Nhập tên sản phẩm: ")
 
-        quantity = int(input("Nhập số lượng: "))
-        price = int(input("Nhập đơn giá: "))
+def calculate_booking_cost(ticket_quantity, seat_class):
+    """
+    Calculate total booking cost including airport service fee.
 
-        if quantity <= 0 or price < 0:
-            print("Lỗi: Số lượng phải > 0 và đơn giá không được âm.")
-            continue
+    Parameters:
+        ticket_quantity (int): Number of tickets.
+        seat_class (int): 1 for Economy, 2 for Business.
 
-        found = False
+    Returns:
+        float: Final payment amount including 5% service fee.
+    """
+    if seat_class == 1:
+        ticket_price = BASE_PRICE
+    else:
+        ticket_price = BASE_PRICE * 1.5
 
-        for item in cart_items:
-            if item[0] == product_id:
-                item[2] += quantity
-                found = True
-                print(f"\nSản phẩm {product_id} đã tồn tại.")
-                print(f"Đã cộng dồn thêm {quantity} sản phẩm.")
-                break
+    subtotal = ticket_price * ticket_quantity
+    service_fee = subtotal * 0.05
 
-        if not found:
-            cart_items.append([product_id, product_name, quantity, price])
-            print("\nThêm sản phẩm mới thành công!")
+    return subtotal + service_fee
 
-        print(f"Tổng số sản phẩm hiện có trong giỏ: {len(cart_items)}")
-        
-    elif choice == 3:
-        check_code_product = input("Nhập mã sản phẩm cần cập nhật số lượng: ")
 
-        isValid = False;
+def book_tickets(ticket_quantity, total_cost):
+    """
+    Process ticket booking and update system data.
 
-        for index, value in enumerate(cart_items, start = 0):
-            if check_code_product == value[0]:
-                change_quantity = int(input(f"Nhập số lượng mới cho sản phẩm {value[1]}: "))
-                isValid = True;
-                if change_quantity > 0:
-                    value[2] = change_quantity
-                    print(f"Đã cập nhật số lượng mới cho sản phẩm {value[1]}")
-                    break;
+    Parameters:
+        ticket_quantity (int): Number of tickets.
+        total_cost (float): Total booking cost.
+
+    Returns:
+        bool: True if booking succeeds, otherwise False.
+    """
+    global available_seats, flight_revenue
+
+    if ticket_quantity > available_seats:
+        return False
+
+    available_seats -= ticket_quantity
+    flight_revenue += total_cost
+
+    return True
+
+
+def cancel_tickets(ticket_quantity):
+    """
+    Cancel tickets and process refund.
+
+    Parameters:
+        ticket_quantity (int): Number of tickets to cancel.
+
+    Returns:
+        float: Refund amount.
+    """
+    global available_seats, flight_revenue
+
+    refund_amount = ticket_quantity * BASE_PRICE * 0.8
+
+    available_seats += ticket_quantity
+    flight_revenue -= refund_amount
+
+    return refund_amount
+
+
+def display_flight_status():
+    """
+    Display flight status report.
+
+    Report Format:
+        - Maximum capacity
+        - Booked seats
+        - Available seats
+        - Current flight revenue
+
+    Returns:
+        None
+    """
+    booked_seats = MAX_CAPACITY - available_seats
+
+    print("\n--- TÌNH TRẠNG CHUYẾN BAY VN2026 ---")
+    print(f"Sức chứa tối đa: {MAX_CAPACITY}")
+    print(f"Ghế đã đặt: {booked_seats}")
+    print(f"Ghế trống: {available_seats}")
+    print(f"Tổng doanh thu hiện tại: ${flight_revenue}")
+
+
+def main():
+    while True:
+        print("\n============= SKYBOOKING SYSTEM =============")
+        print("Chuyến bay: VN2026 | Khởi hành: Hà Nội")
+        print("\n1. Đặt vé máy bay")
+        print("2. Hủy vé & Hoàn tiền")
+        print("3. Xem tình trạng chuyến bay")
+        print("4. Đóng hệ thống")
+        print("==============================================")
+
+        choice = input("Chọn chức năng (1-4): ")
+
+        if choice == "1":
+            print("\n--- ĐẶT VÉ MÁY BAY ---")
+
+            try:
+                quantity = int(input("Nhập số lượng vé: "))
+
+                if quantity <= 0:
+                    print("Số lượng vé không hợp lệ.")
+                    continue
+
+                seat_class = int(
+                    input("Chọn hạng vé (1: Economy, 2: Business): ")
+                )
+
+                if seat_class not in [1, 2]:
+                    print("Hạng vé không hợp lệ.")
+                    continue
+
+                if quantity > available_seats:
+                    print(
+                        f"Rất tiếc, chuyến bay chỉ còn {available_seats} chỗ trống."
+                    )
+                    continue
+
+                if seat_class == 1:
+                    class_name = "Economy"
+                    ticket_price = BASE_PRICE
                 else:
-                    print("Số lượng sản phẩm mới không hợp lệ!")
-                    break;
-    
-        if isValid == False:
-            print("Không tìm thấy sản phẩm cần tìm")
-    
-    elif choice == 4:
-        check_code_product = input("Nhập mã sản phẩm cần xóa: ")
+                    class_name = "Business"
+                    ticket_price = BASE_PRICE * 1.5
 
-        isValid = False;
+                subtotal = ticket_price * quantity
+                service_fee = subtotal * 0.05
+                total_cost = calculate_booking_cost(
+                    quantity, seat_class
+                )
 
-        for index, value in enumerate(cart_items, start = 0):
-            if check_code_product == value[0]:
-                del cart_items[index]
-                isValid = True
-                print(f"Đã xóa thành công sản phẩm {value[1]}!")
+                print("-> Xác nhận đặt chỗ:")
+                print(
+                    f"Số lượng: {quantity} | Hạng: {class_name}"
+                )
+                print(f"Tạm tính: ${subtotal}")
+                print(f"Phí dịch vụ (5%): ${service_fee}")
+                print(f"Tổng thanh toán: ${total_cost}")
 
-                break;
-                
-        if isValid == False:
-            print("Không tìm thấy sản phẩm cần tìm")
-        
-    elif choice == 5:
-        print("\nThoát chương trình!")
-        break
+                if book_tickets(quantity, total_cost):
+                    print(
+                        f"Đặt vé thành công! Ghế trống còn lại: {available_seats}"
+                    )
+
+            except ValueError:
+                print("Dữ liệu nhập không hợp lệ.")
+
+        elif choice == "2":
+            print("\n--- HỦY VÉ & HOÀN TIỀN ---")
+
+            try:
+                quantity = int(
+                    input("Nhập số lượng vé muốn hủy: ")
+                )
+
+                if quantity <= 0:
+                    print("Số lượng vé không hợp lệ.")
+                    continue
+
+                if available_seats + quantity > MAX_CAPACITY:
+                    print(
+                        "Lỗi: Số lượng vé hủy vượt quá số vé đã bán ra."
+                    )
+                    continue
+
+                refund = cancel_tickets(quantity)
+
+                print(
+                    f"Hủy vé thành công. Hệ thống đã hoàn lại: ${refund} (80% giá cơ bản)."
+                )
+                print(
+                    f"Ghế trống hiện tại: {available_seats}"
+                )
+
+            except ValueError:
+                print("Dữ liệu nhập không hợp lệ.")
+
+        elif choice == "3":
+            display_flight_status()
+
+        elif choice == "4":
+            print(
+                "Hệ thống đã đóng. Cảm ơn đã sử dụng SKYBOOKING SYSTEM!"
+            )
+            break
+
+        else:
+            print("Lựa chọn không hợp lệ.")
+
+
+main()
