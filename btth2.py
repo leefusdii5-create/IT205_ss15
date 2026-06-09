@@ -1,108 +1,164 @@
-cart_items = [
-    ["P001", "Dien thoai iPhone 15", 1, 25000000],
-    ["P002", "Op lung Silicon", 2, 150000]
-]
+atm_vault_balance = 50000000
+user_account_balance = 10000000
 
-while True:
-    print("\n" + "="*50)
-    print("          SHOPEE CART MANAGEMENT SYSTEM          ")
-    print("="*50)
-    print("[1] Xem chi tiết giỏ hàng & Tính tổng tiền")
-    print("[2] Thêm sản phẩm mới / Cộng dồn số lượng")
-    print("[3] Cập nhật số lượng của một sản phẩm")
-    print("[4] Xóa sản phẩm khỏi giỏ hàng")
-    print("[5] Thoát chương trình")
-    print("="*50)
-    choice = int(input("Mời bạn chọn chức năng (1-5): "))
-        
-    if choice == 1:
-        print("\n" + "-"*30 + " CHI TIẾT GIỎ HÀNG " + "-"*30)
-        print(f"{'STT':<5} | {'Mã SP':<7} | {'Tên Sản Phẩm':<25} | {'SL':<5} | {'Đơn Giá':<12} | {'Thành Tiền'}")
-        print("-"*85)
-        
-        total_quantity = 0
-        total_amount = 0
-        
-        for index, item in enumerate(cart_items, start=1):
-            product_id = item[0]
-            product_name = item[1]
-            quantity = item[2]
-            price = item[3]
-            
-            subtotal = quantity * price
-            total_quantity += quantity
-            total_amount += subtotal
-            
-            print(f"{index:<5} | {product_id:<7} | {product_name:<25} | {quantity:<5} | {price:,.0f}đ{'' :<4} | {subtotal:,.0f}đ")
-            
-        print("-"*85)
-        print(f"⇒ Tổng số lượng sản phẩm trong giỏ: {total_quantity}")
-        print(f"⇒ TỔNG TIỀN THANH TOÁN: {total_amount:,.0f}đ")
-        print("-" * 85)
 
-    elif choice == 2:
-        product_id = input("Nhập mã sản phẩm: ")
-        product_name = input("Nhập tên sản phẩm: ")
+def display_balances():
+    """
+    Display account balance and ATM cash balance.
 
-        quantity = int(input("Nhập số lượng: "))
-        price = int(input("Nhập đơn giá: "))
+    Parameters:
+        None
 
-        if quantity <= 0 or price < 0:
-            print("Lỗi: Số lượng phải > 0 và đơn giá không được âm.")
-            continue
+    Returns:
+        None
+    """
+    print("\n--- SỐ DƯ TÀI KHOẢN ---")
+    print(f"Tài khoản của bạn: {user_account_balance:,} VND")
+    print(f"(Debug) Tiền mặt trong ATM: {atm_vault_balance:,} VND")
 
-        found = False
 
-        for item in cart_items:
-            if item[0] == product_id:
-                item[2] += quantity
-                found = True
-                print(f"\nSản phẩm {product_id} đã tồn tại.")
-                print(f"Đã cộng dồn thêm {quantity} sản phẩm.")
-                break
+def deposit_money(amount):
+    """
+    Deposit money into the account and ATM vault.
 
-        if not found:
-            cart_items.append([product_id, product_name, quantity, price])
-            print("\nThêm sản phẩm mới thành công!")
+    Parameters:
+        amount (int): Amount of money to deposit.
 
-        print(f"Tổng số sản phẩm hiện có trong giỏ: {len(cart_items)}")
-        
-    elif choice == 3:
-        check_code_product = input("Nhập mã sản phẩm cần cập nhật số lượng: ")
+    Returns:
+        bool: True if deposit succeeds.
+    """
+    global user_account_balance, atm_vault_balance
 
-        isValid = False;
+    user_account_balance += amount
+    atm_vault_balance += amount
+    return True
 
-        for index, value in enumerate(cart_items, start = 0):
-            if check_code_product == value[0]:
-                change_quantity = int(input(f"Nhập số lượng mới cho sản phẩm {value[1]}: "))
-                isValid = True;
-                if change_quantity > 0:
-                    value[2] = change_quantity
-                    print(f"Đã cập nhật số lượng mới cho sản phẩm {value[1]}")
-                    break;
+
+def check_withdrawal_rules(amount):
+    """
+    Check whether a withdrawal request is valid.
+
+    Parameters:
+        amount (int): Amount of money requested for withdrawal.
+
+    Returns:
+        tuple:
+            ("OK", total_deduction, fee) if valid.
+            ("INSUFFICIENT_FUNDS", None, None) if account balance is insufficient.
+            ("ATM_OUT_OF_CASH", None, None) if ATM lacks enough cash.
+    """
+    fee = 1100
+    total_deduction = amount + fee
+
+    if total_deduction > user_account_balance:
+        return "INSUFFICIENT_FUNDS", None, None
+
+    if amount > atm_vault_balance:
+        return "ATM_OUT_OF_CASH", None, None
+
+    return "OK", total_deduction, fee
+
+
+def execute_withdrawal(total_deduction, amount_to_dispense):
+    """
+    Execute withdrawal transaction.
+
+    Parameters:
+        total_deduction (int): Total amount deducted from account.
+        amount_to_dispense (int): Cash dispensed to customer.
+
+    Returns:
+        None
+    """
+    global user_account_balance, atm_vault_balance
+
+    user_account_balance -= total_deduction
+    atm_vault_balance -= amount_to_dispense
+
+
+def main():
+    """
+    Main ATM program loop.
+
+    Parameters:
+        None
+
+    Returns:
+        None
+    """
+    while True:
+        print("\n============= SMART ATM =============")
+        print("1. Xem số dư")
+        print("2. Nạp tiền")
+        print("3. Rút tiền")
+        print("4. Kết thúc giao dịch")
+        print("=====================================")
+
+        choice = input("Vui lòng chọn giao dịch (1-4): ")
+
+        if choice == "1":
+            display_balances()
+
+        elif choice == "2":
+            print("\n--- NẠP TIỀN ---")
+
+            try:
+                amount = int(input("Nhập số tiền muốn nạp: "))
+
+                if amount <= 0:
+                    print("Số tiền không hợp lệ")
+                    continue
+
+                if deposit_money(amount):
+                    print(
+                        f"Giao dịch thành công! Số dư tài khoản hiện tại: {user_account_balance:,} VND."
+                    )
+
+            except ValueError:
+                print("Số tiền không hợp lệ")
+
+        elif choice == "3":
+            print("\n--- RÚT TIỀN ---")
+
+            try:
+                amount = int(input("Nhập số tiền cần rút: "))
+
+                if amount <= 0:
+                    print("Số tiền không hợp lệ")
+                    continue
+
+                if amount % 50000 != 0:
+                    print("Số tiền rút phải là bội số của 50,000")
+                    continue
+
+                status, total_deduction, fee = check_withdrawal_rules(amount)
+
+                if status == "INSUFFICIENT_FUNDS":
+                    print("Giao dịch thất bại: Số dư tài khoản không đủ.")
+
+                elif status == "ATM_OUT_OF_CASH":
+                    print("Giao dịch thất bại: Máy ATM không đủ tiền mặt để phục vụ.")
+
                 else:
-                    print("Số lượng sản phẩm mới không hợp lệ!")
-                    break;
-    
-        if isValid == False:
-            print("Không tìm thấy sản phẩm cần tìm")
-    
-    elif choice == 4:
-        check_code_product = input("Nhập mã sản phẩm cần xóa: ")
+                    print("Giao dịch đang xử lý...")
 
-        isValid = False;
+                    execute_withdrawal(total_deduction, amount)
 
-        for index, value in enumerate(cart_items, start = 0):
-            if check_code_product == value[0]:
-                del cart_items[index]
-                isValid = True
-                print(f"Đã xóa thành công sản phẩm {value[1]}!")
+                    print(f"Phí giao dịch: {fee:,} VND")
+                    print(f"Bạn đã rút thành công {amount:,} VND.")
+                    print(
+                        f"Số dư tài khoản còn lại: {user_account_balance:,} VND."
+                    )
 
-                break;
-                
-        if isValid == False:
-            print("Không tìm thấy sản phẩm cần tìm")
-        
-    elif choice == 5:
-        print("\nThoát chương trình!")
-        break
+            except ValueError:
+                print("Số tiền không hợp lệ")
+
+        elif choice == "4":
+            print("Cảm ơn quý khách đã sử dụng dịch vụ!")
+            break
+
+        else:
+            print("Lựa chọn không hợp lệ. Vui lòng chọn từ 1 đến 4.")
+
+
+main()
